@@ -29,6 +29,20 @@
                 </div>
             </div>
 
+            <div class="mb-4">
+                <label for="email" class="form-label fw-semibold text-dark">Email</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-envelope text-muted"></i></span>
+                    <input type="email" 
+                           class="form-control border-start-0 shadow-sm" 
+                           id="email" 
+                           name="email" 
+                           placeholder="Nhập địa chỉ email" 
+                           required 
+                           style="border-radius: 0 8px 8px 0; transition: all 0.3s ease;">
+                </div>
+            </div>
+
             <div class="mb-5">
                 <label for="password" class="form-label fw-semibold text-dark">Mật Khẩu</label>
                 <div class="input-group">
