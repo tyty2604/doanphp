@@ -25,23 +25,37 @@ class EventController {
     public function filter($filterType) {
         $currentDate = date('Y-m-d');
         $page = $_GET['page'] ?? 1;
-        $perPage = 5;
+        $perPage = 6; // 6 events per page
+        $searchQuery = $_GET['search'] ?? ''; // Get the search query from the URL
 
         // Lấy tất cả sự kiện
         $allEvents = $this->event->getAll();
         
-        // Lọc sự kiện theo loại
-        $filteredEvents = array_filter($allEvents, function($event) use ($currentDate, $filterType) {
+        // Lọc sự kiện theo loại và tìm kiếm
+        $filteredEvents = array_filter($allEvents, function($event) use ($currentDate, $filterType, $searchQuery) {
+            // Lọc theo loại (upcoming, ongoing, past, all)
+            $typeMatch = true;
             switch ($filterType) {
                 case 'upcoming':
-                    return $event['date'] > $currentDate;
+                    $typeMatch = $event['date'] > $currentDate;
+                    break;
                 case 'ongoing':
-                    return $event['date'] == $currentDate;
+                    $typeMatch = $event['date'] == $currentDate;
+                    break;
                 case 'past':
-                    return $event['date'] < $currentDate;
+                    $typeMatch = $event['date'] < $currentDate;
+                    break;
                 default:
-                    return true;
+                    $typeMatch = true;
             }
+
+            // Lọc theo tìm kiếm (theo tiêu đề)
+            $searchMatch = true;
+            if (!empty($searchQuery)) {
+                $searchMatch = stripos($event['title'], $searchQuery) !== false;
+            }
+
+            return $typeMatch && $searchMatch;
         });
 
         // Phân trang
@@ -57,7 +71,8 @@ class EventController {
             'current_filter' => $filterType,
             'current_page' => $page,
             'total_pages' => $totalPages,
-            'total_events' => $totalEvents
+            'total_events' => $totalEvents,
+            'search_query' => $searchQuery // Pass the search query to the view
         ];
         
         extract($data);
@@ -103,7 +118,6 @@ class EventController {
         }
         require_once ROOT . '/app/views/events/add.php';
     }
-    
     
     public function edit($id) {
         if ($this->current_role !== 'admin') {
@@ -152,7 +166,6 @@ class EventController {
         require_once ROOT . '/app/views/events/edit.php';
     }
     
-
     public function delete($id) {
         if ($this->current_role !== 'admin') {
             $_SESSION['error'] = "Bạn không có quyền xóa sự kiện!";
@@ -168,6 +181,7 @@ class EventController {
         header("Location: ?controller=event&action=index");
         exit();
     }
+
     public function detail($id) {
         $event = $this->event->getById($id);
     
@@ -179,6 +193,5 @@ class EventController {
     
         require_once ROOT . '/app/views/events/detail.php';
     }
-    
 }
 ?>
