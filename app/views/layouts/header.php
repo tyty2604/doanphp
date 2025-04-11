@@ -16,6 +16,17 @@
             </a>
 
             <?php if(isset($_SESSION['user_id'])): ?>
+                <?php 
+                    require_once ROOT . '/app/models/User.php';
+                    $userModel = new User();
+                    $current_role = $userModel->getRole($_SESSION['user_id']);
+                ?>
+                <?php if($current_role === 'admin'): ?>
+                    <a href="?controller=event&action=dashboard" 
+                       class="btn btn-outline-light btn-sm px-4 py-2 fw-semibold">
+                        Bảng điều khiển
+                    </a>
+                <?php endif; ?>
                 <!-- Nút Đăng xuất nếu người dùng đã đăng nhập -->
                 <a href="?controller=auth&action=logout" 
                    class="btn btn-outline-light btn-sm px-4 py-2 fw-semibold">
