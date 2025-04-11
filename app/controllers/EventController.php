@@ -193,5 +193,41 @@ class EventController {
     
         require_once ROOT . '/app/views/events/detail.php';
     }
+
+    public function dashboard() {
+        if ($this->current_role !== 'admin') {
+            $_SESSION['error'] = "Bạn không có quyền truy cập Dashboard!";
+            header("Location: ?controller=event&action=index");
+            exit();
+        }
+    
+        // Lấy dữ liệu cho Dashboard
+        $totalEvents = count($this->event->getAll());
+        $upcomingEvents = count(array_filter($this->event->getAll(), function($event) {
+            return $event['date'] > date('Y-m-d');
+        }));
+        $ongoingEvents = count(array_filter($this->event->getAll(), function($event) {
+            return $event['date'] == date('Y-m-d');
+        }));
+        $pastEvents = count(array_filter($this->event->getAll(), function($event) {
+            return $event['date'] < date('Y-m-d');
+        }));
+    
+        $data = [
+            'total_events' => $totalEvents,
+            'upcoming_events' => $upcomingEvents,
+            'ongoing_events' => $ongoingEvents,
+            'past_events' => $pastEvents,
+            'current_role' => $this->current_role
+        ];
+
+        $recentEvents = array_slice(array_filter($this->event->getAll(), function($event) {
+            return $event['date'] >= date('Y-m-d');
+        }), 0, 5); // Lấy 5 sự kiện sắp diễn ra
+        $data['recent_events'] = $recentEvents;
+    
+        extract($data);
+        require_once ROOT . '/app/views/events/dashboard.php';
+    }
 }
 ?>

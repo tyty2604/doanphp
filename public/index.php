@@ -18,7 +18,8 @@
         $requiredFiles = [
             ROOT . '/config/database.php',
             ROOT . '/app/controllers/AuthController.php',
-            ROOT . '/app/controllers/EventController.php'
+            ROOT . '/app/controllers/EventController.php',
+            ROOT . '/app/controllers/UserController.php'
         ];
         
         foreach ($requiredFiles as $file) {
@@ -72,6 +73,26 @@
                     echo "Action not found";
                 }
                 break;
+
+                case 'user':
+                    $userController = new UserController();
+                    if (method_exists($userController, $action)) {
+                        if ($action == 'edit' || $action == 'delete') {
+                            $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+                            if ($id === false || $id === null) {
+                                echo "Invalid user ID";
+                            } elseif ($action == 'edit') {
+                                $userController->edit($id);
+                            } elseif ($action == 'delete') {
+                                $userController->delete($id);
+                            }
+                        } else {
+                            $userController->$action();
+                        }
+                    } else {
+                        echo "Action not found";
+                    }
+                    break;
         
             default:
                 echo "Controller not found";
