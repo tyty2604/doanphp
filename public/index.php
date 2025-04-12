@@ -19,7 +19,8 @@
             ROOT . '/config/database.php',
             ROOT . '/app/controllers/AuthController.php',
             ROOT . '/app/controllers/EventController.php',
-            ROOT . '/app/controllers/UserController.php'
+            ROOT . '/app/controllers/UserController.php',
+            ROOT . '/app/controllers/FeedbackController.php' // Thêm FeedbackController
         ];
         
         foreach ($requiredFiles as $file) {
@@ -59,7 +60,6 @@
                     } elseif ($action == 'filter') {
                         $eventController->filter($filterType);
                     } elseif ($action == 'detail') {
-                        // Xử lý action detail
                         $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
                         if ($id === false || $id === null) {
                             echo "Invalid event ID";
@@ -74,30 +74,47 @@
                 }
                 break;
 
-                case 'user':
-                    $userController = new UserController();
-                    if (method_exists($userController, $action)) {
-                        if ($action == 'edit' || $action == 'delete') {
-                            $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
-                            if ($id === false || $id === null) {
-                                echo "Invalid user ID";
-                            } elseif ($action == 'edit') {
-                                $userController->edit($id);
-                            } elseif ($action == 'delete') {
-                                $userController->delete($id);
-                            }
-                        } else {
-                            $userController->$action();
+            case 'user':
+                $userController = new UserController();
+                if (method_exists($userController, $action)) {
+                    if ($action == 'edit' || $action == 'delete') {
+                        $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+                        if ($id === false || $id === null) {
+                            echo "Invalid user ID";
+                        } elseif ($action == 'edit') {
+                            $userController->edit($id);
+                        } elseif ($action == 'delete') {
+                            $userController->delete($id);
                         }
                     } else {
-                        echo "Action not found";
+                        $userController->$action();
                     }
-                    break;
-        
+                } else {
+                    echo "Action not found";
+                }
+                break;
+
+            case 'feedback':
+                $feedbackController = new FeedbackController();
+                if (method_exists($feedbackController, $action)) {
+                    if ($action == 'delete') {
+                        $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+                        if ($id === false || $id === null) {
+                            echo "Invalid feedback ID";
+                        } else {
+                            $feedbackController->delete($id);
+                        }
+                    } else {
+                        $feedbackController->$action();
+                    }
+                } else {
+                    echo "Action not found";
+                }
+                break;
+
             default:
                 echo "Controller not found";
         }
-        
         ?>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -3,6 +3,7 @@ class EventController {
     private $event;
     private $user;
     private $current_role;
+    private $current_user_id;
 
     public function __construct() {
         require_once ROOT . '/app/models/Event.php';
@@ -16,6 +17,7 @@ class EventController {
         }
 
         $this->current_role = $this->user->getRole($_SESSION['user_id']);
+        $this->current_user_id = $_SESSION['user_id']; // Lưu user_id hiện tại
     }
 
     public function index() {
@@ -25,15 +27,14 @@ class EventController {
     public function filter($filterType) {
         $currentDate = date('Y-m-d');
         $page = $_GET['page'] ?? 1;
-        $perPage = 6; // 6 events per page
-        $searchQuery = $_GET['search'] ?? ''; // Get the search query from the URL
-
-        // Lấy tất cả sự kiện
+        $perPage = 6;
+        $searchQuery = $_GET['search'] ?? '';
+    
+        // Lấy tất cả sự kiện cho cả admin và user
         $allEvents = $this->event->getAll();
         
         // Lọc sự kiện theo loại và tìm kiếm
         $filteredEvents = array_filter($allEvents, function($event) use ($currentDate, $filterType, $searchQuery) {
-            // Lọc theo loại (upcoming, ongoing, past, all)
             $typeMatch = true;
             switch ($filterType) {
                 case 'upcoming':
@@ -48,31 +49,30 @@ class EventController {
                 default:
                     $typeMatch = true;
             }
-
-            // Lọc theo tìm kiếm (theo tiêu đề)
+    
             $searchMatch = true;
             if (!empty($searchQuery)) {
                 $searchMatch = stripos($event['title'], $searchQuery) !== false;
             }
-
+    
             return $typeMatch && $searchMatch;
         });
-
-        // Phân trang
+    
         $totalEvents = count($filteredEvents);
         $totalPages = max(1, ceil($totalEvents / $perPage));
         $page = min(max(1, $page), $totalPages);
         $offset = ($page - 1) * $perPage;
         $paginatedEvents = array_slice($filteredEvents, $offset, $perPage);
-
+    
         $data = [
             'events' => $paginatedEvents,
             'current_role' => $this->current_role,
+            'current_user_id' => $this->current_user_id,
             'current_filter' => $filterType,
             'current_page' => $page,
             'total_pages' => $totalPages,
             'total_events' => $totalEvents,
-            'search_query' => $searchQuery // Pass the search query to the view
+            'search_query' => $searchQuery
         ];
         
         extract($data);
@@ -80,27 +80,21 @@ class EventController {
     }
 
     public function add() {
-        if ($this->current_role !== 'admin') {
-            $_SESSION['error'] = "Bạn không có quyền thêm sự kiện!";
-            header("Location: ?controller=event&action=index");
-            exit();
-        }
-    
+        // Cho phép cả admin và user thêm sự kiện
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $title = $_POST['title'] ?? '';
             $description = $_POST['description'] ?? '';
             $date = $_POST['date'] ?? '';
             $location = $_POST['location'] ?? '';
             $imageName = null;
+            $user_id = $this->current_user_id; // Gán user_id là người hiện tại
     
-            // Xử lý upload ảnh nếu có
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 $imageTmpPath = $_FILES['image']['tmp_name'];
                 $imageName = time() . '_' . basename($_FILES['image']['name']);
                 $uploadDir = ROOT . '/public/upload/events/';
                 $uploadPath = $uploadDir . $imageName;
     
-                // Tạo thư mục nếu chưa có
                 if (!is_dir($uploadDir)) {
                     mkdir($uploadDir, 0777, true);
                 }
@@ -108,7 +102,7 @@ class EventController {
                 move_uploaded_file($imageTmpPath, $uploadPath);
             }
     
-            if ($this->event->add($title, $description, $date, $location, $imageName)) {
+            if ($this->event->add($title, $description, $date, $location, $imageName, $user_id)) {
                 $_SESSION['success'] = "Thêm sự kiện thành công!";
                 header("Location: ?controller=event&action=index");
                 exit();
@@ -120,15 +114,16 @@ class EventController {
     }
     
     public function edit($id) {
-        if ($this->current_role !== 'admin') {
-            $_SESSION['error'] = "Bạn không có quyền chỉnh sửa sự kiện!";
+        $event = $this->event->getById($id);
+        if (!$event) {
+            $_SESSION['error'] = "Không tìm thấy sự kiện!";
             header("Location: ?controller=event&action=index");
             exit();
         }
     
-        $event = $this->event->getById($id);
-        if (!$event) {
-            $_SESSION['error'] = "Không tìm thấy sự kiện!";
+        // Kiểm tra quyền: admin hoặc người đăng sự kiện
+        if ($this->current_role !== 'admin' && $event['user_id'] != $this->current_user_id) {
+            $_SESSION['error'] = "Bạn không có quyền chỉnh sửa sự kiện này!";
             header("Location: ?controller=event&action=index");
             exit();
         }
@@ -138,10 +133,15 @@ class EventController {
             $description = $_POST['description'] ?? '';
             $date = $_POST['date'] ?? '';
             $location = $_POST['location'] ?? '';
-            $imageName = null;
+            $imageName = $event['image'];
     
-            // Nếu người dùng upload ảnh mới
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+                if (!empty($event['image'])) {
+                    $oldImagePath = ROOT . '/public/upload/events/' . $event['image'];
+                    if (file_exists($oldImagePath)) {
+                        unlink($oldImagePath);
+                    }
+                }
                 $imageTmpPath = $_FILES['image']['tmp_name'];
                 $imageName = time() . '_' . basename($_FILES['image']['name']);
                 $uploadDir = ROOT . '/public/upload/events/';
@@ -167,8 +167,16 @@ class EventController {
     }
     
     public function delete($id) {
-        if ($this->current_role !== 'admin') {
-            $_SESSION['error'] = "Bạn không có quyền xóa sự kiện!";
+        $event = $this->event->getById($id);
+        if (!$event) {
+            $_SESSION['error'] = "Không tìm thấy sự kiện!";
+            header("Location: ?controller=event&action=index");
+            exit();
+        }
+    
+        // Kiểm tra quyền: admin hoặc người đăng sự kiện
+        if ($this->current_role !== 'admin' && $event['user_id'] != $this->current_user_id) {
+            $_SESSION['error'] = "Bạn không có quyền xóa sự kiện này!";
             header("Location: ?controller=event&action=index");
             exit();
         }
@@ -181,7 +189,7 @@ class EventController {
         header("Location: ?controller=event&action=index");
         exit();
     }
-
+    
     public function detail($id) {
         $event = $this->event->getById($id);
     
@@ -195,36 +203,48 @@ class EventController {
     }
 
     public function dashboard() {
-        if ($this->current_role !== 'admin') {
-            $_SESSION['error'] = "Bạn không có quyền truy cập Dashboard!";
-            header("Location: ?controller=event&action=index");
-            exit();
-        }
+        require_once ROOT . '/app/models/Feedback.php';
+        $feedbackModel = new Feedback();
     
-        // Lấy dữ liệu cho Dashboard
-        $totalEvents = count($this->event->getAll());
-        $upcomingEvents = count(array_filter($this->event->getAll(), function($event) {
-            return $event['date'] > date('Y-m-d');
-        }));
-        $ongoingEvents = count(array_filter($this->event->getAll(), function($event) {
-            return $event['date'] == date('Y-m-d');
-        }));
-        $pastEvents = count(array_filter($this->event->getAll(), function($event) {
-            return $event['date'] < date('Y-m-d');
-        }));
+        if ($this->current_role === 'admin') {
+            $totalEvents = count($this->event->getAll());
+            $upcomingEvents = count(array_filter($this->event->getAll(), function($event) {
+                return $event['date'] > date('Y-m-d');
+            }));
+            $ongoingEvents = count(array_filter($this->event->getAll(), function($event) {
+                return $event['date'] == date('Y-m-d');
+            }));
+            $pastEvents = count(array_filter($this->event->getAll(), function($event) {
+                return $event['date'] < date('Y-m-d');
+            }));
+            $recentEvents = array_slice($this->event->getAll(), 0, 5);
+            $unreadFeedbacks = $feedbackModel->getUnreadCount();
+        } else {
+            $userEvents = $this->event->getByUserId($this->current_user_id);
+            $totalEvents = count($userEvents);
+            $upcomingEvents = count(array_filter($userEvents, function($event) {
+                return $event['date'] > date('Y-m-d');
+            }));
+            $ongoingEvents = count(array_filter($userEvents, function($event) {
+                return $event['date'] == date('Y-m-d');
+            }));
+            $pastEvents = count(array_filter($userEvents, function($event) {
+                return $event['date'] < date('Y-m-d');
+            }));
+            $recentEvents = array_slice($userEvents, 0, 5);
+            $unreadFeedbacks = 0; // Không hiển thị cho user
+        }
     
         $data = [
             'total_events' => $totalEvents,
             'upcoming_events' => $upcomingEvents,
             'ongoing_events' => $ongoingEvents,
             'past_events' => $pastEvents,
-            'current_role' => $this->current_role
+            'recent_events' => $recentEvents,
+            'unread_feedbacks' => $unreadFeedbacks,
+            'current_role' => $this->current_role,
+            'current_user_id' => $this->current_user_id
         ];
-
-        $recentEvents = array_slice(array_filter($this->event->getAll(), function($event) {
-            return $event['date'] >= date('Y-m-d');
-        }), 0, 5); // Lấy 5 sự kiện sắp diễn ra
-        $data['recent_events'] = $recentEvents;
     
         extract($data);
         require_once ROOT . '/app/views/events/dashboard.php';

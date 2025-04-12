@@ -21,19 +21,28 @@
                     $userModel = new User();
                     $current_role = $userModel->getRole($_SESSION['user_id']);
                 ?>
-                <?php if($current_role === 'admin'): ?>
-                    <a href="?controller=event&action=dashboard" 
-                       class="btn btn-outline-light btn-sm px-4 py-2 fw-semibold">
-                        Bảng điều khiển
-                    </a>
-                <?php endif; ?>
-                <!-- Nút Đăng xuất nếu người dùng đã đăng nhập -->
+                <!-- Nút Dashboard cho cả admin và user -->
+                <a href="?controller=event&action=dashboard" 
+                   class="btn btn-outline-light btn-sm px-4 py-2 fw-semibold">
+                    <?= $current_role === 'admin' ? 'Bảng điều khiển' : 'Tổng quan' ?>
+                </a>
+                <!-- Nút Profile cho cả admin và user -->
+                <a href="?controller=user&action=profile" 
+                   class="btn btn-outline-light btn-sm px-4 py-2 fw-semibold">
+                    Hồ sơ
+                </a>
+                <!-- Nút Phản hồi -->
+                <a href="?controller=feedback&action=create" 
+                   class="btn btn-outline-light btn-sm px-4 py-2 fw-semibold">
+                    Phản hồi
+                </a>
+                <!-- Nút Đăng xuất -->
                 <a href="?controller=auth&action=logout" 
                    class="btn btn-outline-light btn-sm px-4 py-2 fw-semibold">
                     Đăng Xuất
                 </a>
             <?php else: ?>
-                <!-- Nút Đăng nhập và Đăng ký nếu người dùng chưa đăng nhập -->
+                <!-- Nút Đăng nhập và Đăng ký nếu chưa đăng nhập -->
                 <a href="?controller=auth&action=login" 
                    class="btn btn-outline-light btn-sm px-4 py-2 fw-semibold">
                     Đăng Nhập

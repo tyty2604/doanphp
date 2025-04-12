@@ -7,18 +7,16 @@ class UserController {
         require_once ROOT . '/app/models/User.php';
         $this->user = new User();
 
+        // Kiểm tra đăng nhập
         if (!isset($_SESSION['user_id'])) {
+            $_SESSION['error'] = "Vui lòng đăng nhập!";
             header("Location: ?controller=auth&action=login");
             exit();
         }
 
-        $this->current_role = $this->user->getRole($_SESSION['user_id']);
-        // Chỉ admin được truy cập
-        if ($this->current_role !== 'admin') {
-            $_SESSION['error'] = "Bạn không có quyền truy cập trang này!";
-            header("Location: ?controller=event&action=index");
-            exit();
-        }
+        // Khởi tạo current_user_id và current_role
+        $this->current_user_id = $_SESSION['user_id'];
+        $this->current_role = $this->user->getRole($this->current_user_id);
     }
 
     public function index() {
@@ -83,6 +81,31 @@ class UserController {
         }
         header("Location: ?controller=user&action=index");
         exit();
+    }
+
+    public function profile() {
+        $user = $this->user->getById($this->current_user_id);
+        if (!$user) {
+            $_SESSION['error'] = "Không tìm thấy thông tin người dùng!";
+            header("Location: ?controller=event&action=index");
+            exit();
+        }
+    
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $username = $_POST['username'] ?? '';
+            $email = $_POST['email'] ?? '';
+            $password = !empty($_POST['password']) ? password_hash($_POST['password'], PASSWORD_DEFAULT) : $user['password'];
+    
+            if ($this->user->edit($this->current_user_id, $username, $email, $user['role'], $password)) {
+                $_SESSION['success'] = "Cập nhật thông tin thành công!";
+                header("Location: ?controller=user&action=profile");
+                exit();
+            } else {
+                $_SESSION['error'] = "Cập nhật thông tin thất bại!";
+            }
+        }
+    
+        require_once ROOT . '/app/views/users/profile.php';
     }
 }
 ?>
