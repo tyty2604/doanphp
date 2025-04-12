@@ -1,11 +1,7 @@
 <?php require_once ROOT . '/app/views/layouts/header.php'; ?>
 
-
-
 <div class="container py-5">
     <div class="mb-5">
-        
-
         <?php if(isset($_SESSION['error'])): ?>
             <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
                 <i class="fas fa-exclamation-circle me-2"></i><?= $_SESSION['error']; unset($_SESSION['error']); ?>
@@ -42,8 +38,15 @@
                 </div>
             </form>
         </div>
-            <!-- Thêm Sự Kiện Button (chỉ hiển thị cho admin) -->
-        
+
+        <!-- Thêm Sự Kiện Button (cho cả admin và user) -->
+        <div class="text-end mb-4">
+            <a href="?controller=event&action=add" 
+               class="btn btn-primary btn-lg rounded-pill px-4 shadow-sm">
+                <i class="fas fa-plus me-2"></i>Thêm Sự Kiện
+            </a>
+        </div>
+
         <div class="bg-light p-3 rounded-4 mb-4">
             <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-3">
                 <span class="fw-bold text-muted me-2">Lọc theo:</span>
@@ -67,14 +70,7 @@
                 </div>
             </div>
         </div>
-        <?php if(isset($current_role) && $current_role === 'admin'): ?>
-            <div class="text-end mb-4">
-                <a href="?controller=event&action=add" 
-                   class="btn btn-primary btn-lg rounded-pill px-4 shadow-sm">
-                    <i class="fas fa-plus me-2"></i>Thêm Sự Kiện
-                </a>
-            </div>
-        <?php endif; ?>
+
         <div class="row row-cols-1 row-cols-md-3 g-4">
             <?php if(empty($events)): ?>
                 <div class="col-12 text-center py-5">
@@ -87,7 +83,6 @@
             <?php else: ?>
                 <?php foreach($events as $event): ?>
                     <?php 
-                        // Logic to determine event status
                         $event_date = strtotime($event['date']);
                         $today = strtotime('today');
                         $status_badge = '';
@@ -116,7 +111,7 @@
                                         <?php else: ?>
                                             <div class="bg-light rounded-3 d-flex align-items-center justify-content-center" 
                                                  style="width: 100%; height: 150px;">
-                                                <span class "text-muted fst-italic">Không có ảnh</span>
+                                                <span class="text-muted fst-italic">Không có ảnh</span>
                                             </div>
                                         <?php endif; ?>
                                     </div>
@@ -147,7 +142,7 @@
                                    class="btn btn-primary rounded-pill shadow-sm">
                                     <i class="fas fa-eye me-2"></i>Chi tiết
                                 </a>
-                                <?php if(isset($current_role) && $current_role === 'admin'): ?>
+                                <?php if($current_role === 'admin' || $event['user_id'] == $current_user_id): ?>
                                     <a href="?controller=event&action=edit&id=<?= $event['id'] ?>" 
                                        class="btn btn-warning rounded-pill shadow-sm">
                                         <i class="fas fa-edit me-2"></i>Sửa
@@ -288,6 +283,4 @@
 }
 </style>
 
-<?php 
-require_once ROOT . '/app/views/layouts/footer.php'; 
-?>
+<?php require_once ROOT . '/app/views/layouts/footer.php'; ?>

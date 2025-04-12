@@ -1,7 +1,5 @@
 <?php require_once ROOT . '/app/views/layouts/header.php'; ?>
 
-
-
 <div class="container py-5">
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-header bg-primary text-white rounded-top-4">
@@ -27,6 +25,14 @@
                     <p class="mb-3">
                         <i class="fas fa-map-marker-alt text-danger me-2"></i>
                         <strong>Vị trí:</strong> <?php echo htmlspecialchars($event['location']); ?>
+                    </p>
+                    <p class="mb-3">
+                        <i class="fas fa-user text-success me-2"></i>
+                        <strong>Người đăng:</strong> <?php echo htmlspecialchars($event['username'] ?? 'Không xác định'); ?>
+                    </p>
+                    <p class="mb-3">
+                        <i class="fas fa-envelope text-info me-2"></i>
+                        <strong>Email:</strong> <?php echo htmlspecialchars($event['email'] ?? 'Không xác định'); ?>
                     </p>
                     <p class="mb-3">
                         <i class="fas fa-info-circle text-info me-2"></i>
