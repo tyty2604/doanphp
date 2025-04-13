@@ -2,33 +2,7 @@
 
 <div class="d-flex" id="wrapper">
     <!-- Sidebar -->
-    <div class="bg-dark text-white" id="sidebar-wrapper">
-        <div class="sidebar-heading text-center py-4 fs-4 fw-bold border-bottom">
-            <i class="fas fa-tachometer-alt me-2"></i>Admin Panel
-        </div>
-        <div class="list-group list-group-flush">
-            <a href="?controller=event&action=dashboard" 
-               class="list-group-item list-group-item-action bg-dark text-white py-3">
-                <i class="fas fa-tachometer-alt me-2"></i>Bảng điều khiển
-            </a>
-            <a href="?controller=user&action=index" 
-                class="list-group-item list-group-item-action bg-dark text-white py-3">
-                <i class="fas fa-users me-2"></i>Quản Lý Người Dùng
-            </a>
-            <a href="?controller=event&action=index" 
-               class="list-group-item list-group-item-action bg-dark text-white py-3">
-                <i class="fas fa-calendar-alt me-2"></i>Danh Sách Sự Kiện
-            </a>
-            <a href="?controller=event&action=add" 
-               class="list-group-item list-group-item-action bg-dark text-white py-3">
-                <i class="fas fa-plus me-2"></i>Thêm Sự Kiện
-            </a>
-            <a href="?controller=auth&action=logout" 
-               class="list-group-item list-group-item-action bg-dark text-white py-3">
-                <i class="fas fa-sign-out-alt me-2"></i>Đăng Xuất
-            </a>
-        </div>
-    </div>
+    <?php require_once ROOT . '/app/views/layouts/sidebar.php'; ?>
 
     <!-- Nội dung chính -->
     <div id="page-content-wrapper">
@@ -46,7 +20,8 @@
             <div class="card border-0 shadow-lg rounded-4">
                 <div class="card-body p-4 p-md-5">
                     <h1 class="card-title text-primary fw-bold mb-5">
-                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        <i class="fas fa-tachometer-alt me-2"></i>
+                        <?= $current_role === 'admin' ? 'Dashboard' : 'Tổng quan sự kiện' ?>
                     </h1>
 
                     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
@@ -86,12 +61,27 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col">
+                            <!-- Phản hồi chưa đọc (chỉ cho admin) -->
+                            <?php if ($current_role === 'admin'): ?>
+                                <div class="col">
+                                    <div class="card h-100 border-0 shadow-sm rounded-3 bg-warning text-white">
+                                        <div class="card-body text-center">
+                                            <h5 class="card-title fw-bold">Phản Hồi Chưa Đọc</h5>
+                                            <p class="display-4 fw-bold"><?= $unread_feedbacks ?></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
                     </div>
 
+                    
                     <!-- Nút quay lại danh sách sự kiện -->
                     <div class="mt-5 text-center">
                         <a href="?controller=event&action=index" class="btn btn-primary btn-lg rounded-pill px-4">
-                            <i class="fas fa-arrow-left me-2"></i>Quay lại Danh sách Sự kiện
+                            <i class="fas fa-arrow-left me-2"></i>
+                            <?= $current_role === 'admin' ? 'Quay lại Danh sách Sự kiện' : 'Quản lý sự kiện' ?>
                         </a>
                     </div>
 
@@ -99,7 +89,9 @@
                         <div class="col">
                             <div class="card border-0 shadow-lg rounded-4">
                                 <div class="card-body p-4">
-                                    <h5 class="card-title fw-bold mb-4">Các sự kiện gần đây</h5>
+                                    <h5 class="card-title fw-bold mb-4">
+                                        <?= $current_role === 'admin' ? 'Các sự kiện gần đây' : 'Sự kiện của bạn' ?>
+                                    </h5>
                                     <table class="table table-striped">
                                         <thead>
                                             <tr>
@@ -117,9 +109,20 @@
                                                     <td><?= htmlspecialchars($event['location']) ?></td>
                                                     <td>
                                                         <a href="?controller=event&action=detail&id=<?= $event['id'] ?>" 
-                                                        class="btn btn-sm btn-primary rounded-circle">
+                                                           class="btn btn-sm btn-primary rounded-circle">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
+                                                        <?php if ($current_role === 'admin' || $event['user_id'] == $current_user_id): ?>
+                                                            <a href="?controller=event&action=edit&id=<?= $event['id'] ?>" 
+                                                               class="btn btn-sm btn-warning rounded-circle">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                            <a href="?controller=event&action=delete&id=<?= $event['id'] ?>" 
+                                                               class="btn btn-sm btn-danger rounded-circle" 
+                                                               onclick="return confirm('Bạn có chắc muốn xóa sự kiện này?')">
+                                                                <i class="fas fa-trash"></i>
+                                                            </a>
+                                                        <?php endif; ?>
                                                     </td>
                                                 </tr>
                                             <?php endforeach; ?>
