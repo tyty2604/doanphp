@@ -16,7 +16,7 @@
             </div>
         <?php endif; ?>
 
-        <!-- Search Bar -->
+        
         <div class="mb-4">
             <form method="GET" action="?controller=event&action=filter">
                 <input type="hidden" name="controller" value="event">
@@ -39,13 +39,12 @@
             </form>
         </div>
 
-        <!-- Thêm Sự Kiện Button (cho cả admin và user) -->
-        <div class="text-end mb-4">
+        <!-- <div class="text-end mb-4">
             <a href="?controller=event&action=add" 
                class="btn btn-primary btn-lg rounded-pill px-4 shadow-sm">
                 <i class="fas fa-plus me-2"></i>Thêm Sự Kiện
             </a>
-        </div>
+        </div> -->
 
         <div class="bg-light p-3 rounded-4 mb-4">
             <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-3">
